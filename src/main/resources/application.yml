@@ -44,3 +44,31 @@ springdoc:
 
 server:
   port: 8080
+
+# ---- Real-time purchase feed (WATCH stage delivery mechanism) ----
+# Swap the delivery mechanism with a single flag:
+#   local-scheduled -> LocalScheduledFeed (demo drip, no infra needed)
+#   pubsub          -> PubSubFeed (production subscriber; stubbed offline)
+#   none            -> no feed active
+feed:
+  type: local-scheduled
+  local:
+    interval-ms: 5000        # emit a simulated purchase every 5s
+    initial-delay-ms: 5000   # wait 5s after startup before the first emit
+
+# ---- Matching rules (MATCH stage) ----
+# Which merchant categories qualify a purchase for each benefit type.
+# Editable here with no code changes.
+matching:
+  categories:
+    PURCHASE_PROTECTION:
+      - ELECTRONICS
+      - APPLIANCES
+    RETURN_PROTECTION:
+      - APPAREL
+      - DEPARTMENT_STORE
+      - ELECTRONICS
+    TRAVEL_DELAY:
+      - AIRLINE
+      - LODGING
+      - TRAVEL_AGENCY
