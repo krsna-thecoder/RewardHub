@@ -1,5 +1,9 @@
 package com.amex.benefit_activation_engine.controller;
 
+import com.amex.benefit_activation_engine.service.ClaimNotEntitledException;
+import com.amex.benefit_activation_engine.service.ClaimNotFoundException;
+import com.amex.benefit_activation_engine.service.IllegalClaimTransitionException;
+import com.amex.benefit_activation_engine.service.PrefillIncompleteException;
 import com.amex.benefit_activation_engine.service.TransactionNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -40,6 +44,38 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Not found");
+        return problem;
+    }
+
+    @ExceptionHandler(ClaimNotFoundException.class)
+    public ProblemDetail handleClaimNotFound(ClaimNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Not found");
+        return problem;
+    }
+
+    @ExceptionHandler(PrefillIncompleteException.class)
+    public ProblemDetail handlePrefillIncomplete(PrefillIncompleteException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+        problem.setTitle("Pre-fill incomplete");
+        return problem;
+    }
+
+    @ExceptionHandler(IllegalClaimTransitionException.class)
+    public ProblemDetail handleIllegalTransition(IllegalClaimTransitionException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Illegal claim transition");
+        return problem;
+    }
+
+    @ExceptionHandler(ClaimNotEntitledException.class)
+    public ProblemDetail handleNotEntitled(ClaimNotEntitledException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Claim not entitled");
         return problem;
     }
 

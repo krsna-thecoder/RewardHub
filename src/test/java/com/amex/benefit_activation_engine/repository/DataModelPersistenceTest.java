@@ -105,10 +105,10 @@ class DataModelPersistenceTest {
                 .build());
 
         assertThat(saved.getId()).isNotNull();
-        assertThat(saved.getStatus()).isEqualTo(ClaimStatus.DRAFT); // @Builder.Default
+        assertThat(saved.getStatus()).isEqualTo(ClaimStatus.PREFILLED); // @Builder.Default
         assertThat(saved.getCreatedAt()).isNotNull();               // @PrePersist
 
-        List<Claim> drafts = claimRepository.findByStatus(ClaimStatus.DRAFT);
+        List<Claim> drafts = claimRepository.findByStatus(ClaimStatus.PREFILLED);
         assertThat(drafts).hasSize(1);
 
         Claim reloaded = claimRepository.findById(saved.getId()).orElseThrow();

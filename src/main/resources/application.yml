@@ -55,6 +55,7 @@ feed:
   local:
     interval-ms: 5000        # emit a simulated purchase every 5s
     initial-delay-ms: 5000   # wait 5s after startup before the first emit
+    start-paused: false      # boot with the drip paused (toggle at /api/admin/feed)
 
 # ---- Matching rules (MATCH stage) ----
 # Which merchant categories qualify a purchase for each benefit type.
@@ -72,3 +73,9 @@ matching:
       - AIRLINE
       - LODGING
       - TRAVEL_AGENCY
+
+# ---- Approval workflow (WORKFLOW stage) ----
+# Claims at or below the threshold are auto-approved on submission;
+# larger claims are routed to manual review.
+workflow:
+  auto-approve-threshold: 700.00

@@ -38,7 +38,7 @@ public record BenefitMatchResponse(
     private static String reasonFor(BenefitType type, Transaction txn) {
         return switch (type) {
             case PURCHASE_PROTECTION -> "Eligible " + txn.getMerchantCategory()
-                    + " purchase within the coverage window and amount limit";
+                    + " purchase within the coverage window (reimbursed up to the per-claim limit)";
             case RETURN_PROTECTION -> "Retail purchase covered by return protection within the return window";
             case TRAVEL_DELAY -> "Travel purchase covered by travel-delay insurance";
         };

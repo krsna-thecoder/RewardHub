@@ -25,7 +25,9 @@ import java.util.List;
  *   <li><b>Rules</b> — apply the per-type rule to each entitled benefit:
  *     <ul>
  *       <li>Purchase Protection: qualifying category (e.g. ELECTRONICS) AND
- *           amount ≤ per-claim limit AND within the coverage window.</li>
+ *           within the coverage window. Over-limit purchases still qualify — the
+ *           per-claim limit is applied as a payout cap during ranking/pre-fill,
+ *           not as an eligibility gate.</li>
  *       <li>Return Protection: qualifying retail category AND within the
  *           coverage window.</li>
  *       <li>Travel-Delay: qualifying travel category. The purchase-date coverage
@@ -91,8 +93,9 @@ public class SimpleRuleEngine implements RuleEngine {
             return false;
         }
         return switch (type) {
-            // 🛡️ Electronics/appliances within amount limit and coverage window.
-            case PURCHASE_PROTECTION -> withinCoverageWindow(benefit, txn) && amountWithinLimit(benefit, txn);
+            // 🛡️ Electronics/appliances within coverage window; over-limit purchases
+            // still match — the per-claim limit is applied later as a payout cap.
+            case PURCHASE_PROTECTION -> withinCoverageWindow(benefit, txn);
             // 📦 Retail purchase within the return coverage window.
             case RETURN_PROTECTION -> withinCoverageWindow(benefit, txn);
             // ✈️ Travel purchase; window is event/hours-based, not days-from-purchase (Phase-1 flag).
@@ -106,11 +109,6 @@ public class SimpleRuleEngine implements RuleEngine {
         }
         LocalDate earliestCovered = LocalDate.now().minusDays(benefit.getCoverageWindowDays());
         return !txn.getPurchaseDate().isBefore(earliestCovered);
-    }
-
-    private boolean amountWithinLimit(Benefit benefit, Transaction txn) {
-        return benefit.getPerClaimLimit() != null
-                && txn.getAmount().compareTo(benefit.getPerClaimLimit()) <= 0;
     }
 
     private BigDecimal estimatedClaim(Benefit benefit, Transaction txn) {

@@ -74,12 +74,14 @@ class SimpleRuleEngineTest {
     }
 
     @Test
-    void purchaseAmountOverLimit_fallsBackToReturnProtectionOnly() {
-        // 2000 > purchase limit (1000) -> purchase protection fails the amount gate,
-        // but return protection has no amount gate.
+    void purchaseAmountOverLimit_stillMatchesPurchaseProtection_cappedAtLimit() {
+        // 2000 > purchase limit (1000): the limit is a payout cap, not an eligibility
+        // gate, so purchase protection still matches (and outranks return protection,
+        // since min(2000,1000)=1000 > min(2000,300)=300).
         List<Benefit> matches = ruleEngine.match(txn("PLATINUM", "ELECTRONICS", "2000.00", LocalDate.now()));
 
-        assertThat(types(matches)).containsExactly(BenefitType.RETURN_PROTECTION);
+        assertThat(types(matches))
+                .containsExactly(BenefitType.PURCHASE_PROTECTION, BenefitType.RETURN_PROTECTION);
     }
 
     @Test

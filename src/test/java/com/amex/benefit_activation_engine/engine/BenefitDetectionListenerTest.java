@@ -1,8 +1,10 @@
 package com.amex.benefit_activation_engine.engine;
 
 import com.amex.benefit_activation_engine.dto.CreateTransactionRequest;
+import com.amex.benefit_activation_engine.model.ClaimStatus;
 import com.amex.benefit_activation_engine.model.Transaction;
 import com.amex.benefit_activation_engine.model.TransactionStatus;
+import com.amex.benefit_activation_engine.repository.ClaimRepository;
 import com.amex.benefit_activation_engine.repository.TransactionRepository;
 import com.amex.benefit_activation_engine.service.IngestionService;
 import org.junit.jupiter.api.AfterEach;
@@ -12,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,9 +34,13 @@ class BenefitDetectionListenerTest {
     private IngestionService ingestionService;
     @Autowired
     private TransactionRepository transactionRepository;
+    @Autowired
+    private ClaimRepository claimRepository;
 
     @AfterEach
     void cleanUp() {
+        // Claims reference transactions (FK), so remove claims first.
+        claimRepository.deleteAll();
         transactionRepository.deleteAll();
     }
 
@@ -56,6 +63,12 @@ class BenefitDetectionListenerTest {
         // The synchronous ingest response reflects VALIDATED; detection runs after commit.
         Transaction reloaded = transactionRepository.findById(saved.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(TransactionStatus.MATCHED);
+
+        // PRE-FILL: a claim is auto-generated for the matched benefit.
+        var claims = claimRepository.findByTransactionId(saved.getId());
+        assertThat(claims).hasSize(1);
+        assertThat(claims.get(0).getStatus()).isEqualTo(ClaimStatus.PREFILLED);
+        assertThat(claims.get(0).getPrefilledData()).isNotEmpty();
     }
 
     @Test
@@ -64,5 +77,9 @@ class BenefitDetectionListenerTest {
 
         Transaction reloaded = transactionRepository.findById(saved.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(TransactionStatus.NO_MATCH);
+
+        // No match → no claim pre-filled.
+        List<?> claims = claimRepository.findByTransactionId(saved.getId());
+        assertThat(claims).isEmpty();
     }
 }
