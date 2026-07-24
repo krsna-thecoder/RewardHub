@@ -1,6 +1,7 @@
 package com.amex.benefit_activation_engine.controller;
 
 import com.amex.benefit_activation_engine.service.ClaimNotEntitledException;
+import com.amex.benefit_activation_engine.service.ClaimAccessDeniedException;
 import com.amex.benefit_activation_engine.service.ClaimNotFoundException;
 import com.amex.benefit_activation_engine.service.IllegalClaimTransitionException;
 import com.amex.benefit_activation_engine.service.PrefillIncompleteException;
@@ -76,6 +77,14 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Claim not entitled");
+        return problem;
+    }
+
+    @ExceptionHandler(ClaimAccessDeniedException.class)
+    public ProblemDetail handleClaimAccessDenied(ClaimAccessDeniedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Forbidden");
         return problem;
     }
 

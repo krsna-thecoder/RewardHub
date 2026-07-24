@@ -3,9 +3,11 @@ package com.amex.benefit_activation_engine.service;
 import com.amex.benefit_activation_engine.model.Benefit;
 import com.amex.benefit_activation_engine.model.BenefitType;
 import com.amex.benefit_activation_engine.model.Claim;
+import com.amex.benefit_activation_engine.model.ClaimAuditEvent;
 import com.amex.benefit_activation_engine.model.ClaimStatus;
 import com.amex.benefit_activation_engine.model.Transaction;
 import com.amex.benefit_activation_engine.repository.ClaimRepository;
+import com.amex.benefit_activation_engine.repository.ClaimAuditRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,7 @@ import java.util.Map;
 public class ClaimService {
 
     private final ClaimRepository claimRepository;
+    private final ClaimAuditRepository auditRepository;
 
     // ---- Pre-filled field keys (stable contract shared with the UI) ----
     static final String FIELD_CARD_MEMBER_ID = "cardMemberId";
@@ -114,6 +117,95 @@ public class ClaimService {
     public Claim getById(Long id) {
         return claimRepository.findById(id)
                 .orElseThrow(() -> new ClaimNotFoundException(id));
+    }
+
+    /**
+     * Returns a card member's claims (newest first), optionally filtered by
+     * status. Used by the customer {@code /api/me/claims} endpoint so a member
+     * only ever sees their own claims.
+     */
+    @Transactional(readOnly = true)
+    public List<Claim> findForCardMember(String cardMemberId, ClaimStatus status) {
+        if (status == null) {
+            return claimRepository.findByTransactionCardMemberIdOrderByCreatedAtDesc(cardMemberId);
+        }
+        return claimRepository.findByTransactionCardMemberIdAndStatusOrderByCreatedAtDesc(cardMemberId, status);
+    }
+
+    /**
+     * Loads a claim and verifies it belongs to {@code cardMemberId}.
+     *
+     * @throws ClaimNotFoundException     if no claim has the given id
+     * @throws ClaimAccessDeniedException if the claim belongs to another member
+     */
+    @Transactional(readOnly = true)
+    public Claim getOwnedBy(Long id, String cardMemberId) {
+        Claim claim = getById(id);
+        Transaction txn = claim.getTransaction();
+        if (txn == null || !cardMemberId.equals(txn.getCardMemberId())) {
+            throw new ClaimAccessDeniedException(id);
+        }
+        return claim;
+    }
+
+    /**
+     * Reviewer listing across all customers with optional filters. Any argument
+     * left null/blank is ignored. {@code cardMemberId} matches partially
+     * (case-insensitive contains); the other text filters match exactly
+     * (case-insensitive). Results are newest first.
+     */
+    @Transactional(readOnly = true)
+    public List<Claim> findForReviewer(ClaimStatus status,
+                                       String cardMemberId,
+                                       String cardProduct,
+                                       String merchantCategory,
+                                       BenefitType benefitType) {
+        // A reviewer filtering by "Submitted" wants every claim the owner has
+        // actually submitted, regardless of where it landed afterwards
+        // (under review, approved, rejected, or processed). Everything except
+        // a still-PREFILLED claim counts as submitted.
+        //
+        // "Approved" means every claim a reviewer approved. Because an approval
+        // immediately disburses (APPROVED → PAID), those claims no longer sit in
+        // APPROVED, so we resolve them from the audit trail (actor REVIEWER →
+        // APPROVED). This makes a reviewer-approved claim appear under both
+        // "Approved" and "Processed".
+        List<Claim> base;
+        if (status == null) {
+            base = claimRepository.findAll();
+        } else if (status == ClaimStatus.SUBMITTED) {
+            base = claimRepository.findAll().stream()
+                    .filter(c -> c.getStatus() != ClaimStatus.PREFILLED)
+                    .toList();
+        } else if (status == ClaimStatus.APPROVED) {
+            List<Long> reviewerApprovedIds = auditRepository
+                    .findByActorAndToStatus("REVIEWER", ClaimStatus.APPROVED).stream()
+                    .map(ClaimAuditEvent::getClaimId)
+                    .distinct()
+                    .toList();
+            base = claimRepository.findAllById(reviewerApprovedIds);
+        } else {
+            base = claimRepository.findByStatus(status);
+        }
+
+        String memberQuery = StringUtils.hasText(cardMemberId)
+                ? cardMemberId.trim().toLowerCase() : null;
+
+        return base.stream()
+                .filter(c -> c.getTransaction() != null)
+                .filter(c -> memberQuery == null
+                        || c.getTransaction().getCardMemberId() != null
+                        && c.getTransaction().getCardMemberId().toLowerCase().contains(memberQuery))
+                .filter(c -> !StringUtils.hasText(cardProduct)
+                        || cardProduct.equalsIgnoreCase(c.getTransaction().getCardProduct()))
+                .filter(c -> !StringUtils.hasText(merchantCategory)
+                        || merchantCategory.equalsIgnoreCase(c.getTransaction().getMerchantCategory()))
+                .filter(c -> benefitType == null
+                        || (c.getBenefit() != null && benefitType == c.getBenefit().getType()))
+                .sorted(java.util.Comparator.comparing(
+                        Claim::getCreatedAt,
+                        java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                .toList();
     }
 
     // ------------------------------------------------------------------
