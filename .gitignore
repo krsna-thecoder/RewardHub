@@ -1,6 +1,12 @@
 # Local planning / reference docs (not tracked)
 project.md
 checklist.md
+presentation.md
+
+# Generated diagrams (not tracked)
+docs/diagrams/*.png
+docs/diagrams/*.svg
+docs/diagrams/*.mmd
 
 
 HELP.md
