@@ -301,6 +301,31 @@ npm run build        # outputs to ../src/main/resources/static
 
 > These are demo identity tokens for the prototype, **not** password-based authentication.
 
+### Trying it out end-to-end
+
+**As a card member (e.g. `CM-1001`):**
+- Land on **"Claims to make"** — the pre-filled claims the engine generated for that member's
+  matched purchases.
+- Review a claim and tap **Submit**. Claims **at or below $700** are **auto-approved (and paid)**
+  instantly; anything **above $700** is routed to a reviewer.
+- Track everything under **"Submitted claims"** with its live status.
+
+**As the reviewer (`admin`):**
+- Open the **review queue** to see claims **over $700** waiting for a decision.
+- **Approve** (which disburses the payout) or **Reject** with a reason.
+- Use **Search** to filter claims across all customers, and the **Dashboard** for live metrics.
+
+### Where the transactions come from
+
+- **Automatic feed (default):** a built-in seeder/feed (`LocalScheduledFeed`) **drips a simulated
+  purchase every 5 seconds** the moment the app starts, so matched benefits and pre-filled claims
+  appear on their own — no setup needed. Pause/resume it via `POST /api/admin/feed`, or turn it
+  off with `feed.type: none` in `application.yml`.
+- **Manual entry via Swagger:** open `http://localhost:8080/swagger-ui.html` and use
+  **`POST /api/transactions`** to add your own purchase (amount, merchant, category, card product,
+  date). It flows through the exact same pipeline — the engine matches it and pre-fills a claim
+  that shows up for the matching card member.
+
 ---
 
 ## API Reference
