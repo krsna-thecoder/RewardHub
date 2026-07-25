@@ -1,3 +1,4 @@
+![RewardHub](https://socialify.git.ci/krsna-thecoder/RewardHub/image?description=1&font=Raleway&language=1&name=1&owner=1&pattern=Brick+Wall&theme=Auto)
 # RewardHub - Card Benefit Activation Engine
 
 > **Never leave a benefit you've paid for unclaimed.**
