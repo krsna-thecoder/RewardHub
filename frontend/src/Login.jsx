@@ -30,7 +30,7 @@ export default function Login({ onLogin, initialError }) {
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="brand brand-large">
           <span className="brand-mark">◆</span>
-          <span>Card Benefits</span>
+          <span>RewardHub</span>
         </div>
         <h1 className="login-title">Sign in</h1>
         <p className="login-subtitle">

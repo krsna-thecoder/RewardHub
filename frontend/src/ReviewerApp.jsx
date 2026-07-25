@@ -15,7 +15,7 @@ export default function ReviewerApp({ onSignOut }) {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark">◆</span><span>Card Benefits · Reviewer</span></div>
+        <div className="brand"><span className="brand-mark">◆</span><span>RewardHub · Reviewer</span></div>
         <div className="account">
           <span className="account-id">admin</span>
           <button className="link-button" onClick={onSignOut}>Sign out</button>

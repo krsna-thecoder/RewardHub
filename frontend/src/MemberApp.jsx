@@ -50,7 +50,7 @@ export default function MemberApp({ cardMemberId, onSignOut }) {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark">◆</span><span>Card Benefits</span></div>
+        <div className="brand"><span className="brand-mark">◆</span><span>RewardHub</span></div>
         <div className="account">
           <span className="account-id">{cardMemberId}</span>
           <button className="link-button" onClick={onSignOut}>Sign out</button>
